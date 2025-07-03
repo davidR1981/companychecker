@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Checker</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800">
+  <header class="bg-green-600 py-6 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center">
+      <h1 class="text-3xl font-bold uppercase tracking-wide text-white">Company Checker</h1>
+      <div class="flex items-center gap-2 border-2 border-green-100 rounded-md px-3 py-1 w-full sm:w-96 bg-green-700 mt-4 sm:mt-0">
+        <input type="text" placeholder="Search for a company..." class="bg-transparent w-full focus:outline-none text-sm placeholder-green-200 text-green-50" />
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-10">
+    <section class="mb-8">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-4xl font-bold text-green-700">DCA Bit</h2>
+        <a href="https://dcabit.com/" class="bg-green-600 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-green-700 transition" target="_blank" rel="noopener noreferrer">Visit DCABIT</a>
+      </div>
+      <div class="flex items-center mt-1">
+        <span class="text-yellow-400 text-xl mr-2">★★★★★</span>
+        <span class="text-sm text-gray-600">4.3 out of 5</span>
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h3 class="text-2xl font-semibold text-gray-800 mb-4">Submit a Review</h3>
+      <form class="grid gap-4 mb-10 bg-gray-50 p-6 rounded-lg shadow">
+        <input type="text" placeholder="Your Name" class="border border-gray-300 rounded px-3 py-2" required />
+        <input type="text" placeholder="City, Country" class="border border-gray-300 rounded px-3 py-2" required />
+        <textarea placeholder="Your Review" class="border border-gray-300 rounded px-3 py-2" rows="4" required></textarea>
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium">Rating:</label>
+          <select class="border border-gray-300 rounded px-2 py-1">
+            <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+          </select>
+        </div>
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit Review</button>
+      </form>
+
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-2xl font-semibold text-gray-800">Customer Reviews</h3>
+        <button id="sort-button" class="text-sm border border-gray-300 px-3 py-1 rounded-md bg-white text-gray-700 hover:bg-gray-50 shadow-sm">Sort by Rating ↓</button>
+      </div>
+
+      <div id="reviews-container" class="grid gap-6"></div>
+
+      <div class="flex justify-center mt-10 space-x-2" id="pagination"></div>
+    </section>
+  </main>
+
+  <footer class="bg-green-600 py-6 mt-12">
+    <div class="max-w-6xl mx-auto px-4 text-center text-sm text-white">
+      &copy; 2025 Company Checker | Crafted by ChatGPT ✦ All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    const reviews = [
+      { name: "Emily Johnson", location: "Toronto, Canada", rating: 5, text: "I've used DCABit for several months now and I'm consistently impressed by their professional support and speed. From verifying company details to following up on legal documents, everything is well organized and transparent." },
+      { name: "Liam Smith", location: "London, UK", rating: 4, text: "Very helpful platform. The UI is simple, and I managed to verify 3 companies within minutes. I do think adding filters or tags could enhance the usability even more." },
+      { name: "Ava Brown", location: "Sydney, Australia", rating: 5, text: "Amazing! I was skeptical at first, but DCABit really helped me vet a few international partners. The information was up-to-date and helped me avoid a major scam." },
+      { name: "Noah Garcia", location: "New York, USA", rating: 3, text: "Useful site, but I encountered a couple of bugs during navigation. The concept is solid though, and I’ll be watching for improvements in future updates." },
+      { name: "Sofia Müller", location: "Berlin, Germany", rating: 4, text: "I’ve tested this on various companies and the results were mostly accurate. For my industry, cross-checking company reputations is critical, and this helped a lot." },
+      { name: "Lucas Dubois", location: "Paris, France", rating: 5, text: "Excellent tool for small business owners like myself. It offers peace of mind knowing who I'm dealing with. Highly recommended!" },
+      { name: "Isla Rossi", location: "Milan, Italy", rating: 4, text: "Very intuitive dashboard. I think this could be the future of company transparency. Fast and reliable." },
+      { name: "Mateo Silva", location: "São Paulo, Brazil", rating: 3, text: "It works fine, although I noticed some load time delays during peak hours. If they fix performance, it’ll be a 5 from me." },
+      { name: "Mia Lee", location: "Seoul, South Korea", rating: 5, text: "Everything about DCABit feels premium. The reviews, legal notes, and confidence score feature give me all I need for quick business decisions." },
+      { name: "Oliver Andersson", location: "Stockholm, Sweden", rating: 4, text: "I didn’t expect to rely on this tool so much, but it has saved me countless hours. Only suggestion is a dark mode option!" }
+    ].concat(
+      Array.from({length: 27}, (_, i) => ({
+        name: `User ${i + 11}`,
+        location: `City ${i + 11}, Country`,
+        rating: [5,4,3,2,1][Math.floor(Math.random() * 5)],
+        text: `This is a randomly generated review number ${i + 11}. I've had various experiences with DCABit – some good, some not so good. The service is evolving, and I appreciate their effort. I hope to see more stability and improved features soon.`
+      }))
+    );
+
+    const reviewsPerPage = 10;
+    let currentPage = 1;
+    let sortDescending = true;
+
+    function displayReviews(page) {
+      const start = (page - 1) * reviewsPerPage;
+      const end = start + reviewsPerPage;
+      const container = document.getElementById("reviews-container");
+      container.innerHTML = "";
+
+      reviews.slice(start, end).forEach(r => {
+        container.innerHTML += `
+          <div class="border p-4 rounded shadow">
+            <h4 class="font-semibold text-green-700">${r.name} - ${r.location}</h4>
+            <p class="text-yellow-400 text-sm">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</p>
+            <p class="text-sm mt-1 leading-relaxed">${r.text}</p>
+          </div>
+        `;
+      });
+    }
+
+    function setupPagination() {
+      const pageCount = Math.ceil(reviews.length / reviewsPerPage);
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+
+      for (let i = 1; i <= pageCount; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = `page-btn px-4 py-2 border rounded-md ${i === 1 ? 'bg-green-600 text-white' : 'bg-white text-green-700 border-green-300'}`;
+        btn.addEventListener("click", () => {
+          currentPage = i;
+          displayReviews(i);
+          document.querySelectorAll(".page-btn").forEach(b => b.className = "page-btn px-4 py-2 border rounded-md bg-white text-green-700 border-green-300");
+          btn.className = "page-btn px-4 py-2 border rounded-md bg-green-600 text-white";
+        });
+        pagination.appendChild(btn);
+      }
+    }
+
+    document.getElementById("sort-button").addEventListener("click", () => {
+      sortDescending = !sortDescending;
+      reviews.sort((a, b) => sortDescending ? b.rating - a.rating : a.rating - b.rating);
+      currentPage = 1;
+      displayReviews(currentPage);
+      setupPagination();
+      document.getElementById("sort-button").textContent = sortDescending ? "Sort by Rating ↓" : "Sort by Rating ↑";
+    });
+
+    displayReviews(currentPage);
+    setupPagination();
+  </script>
+</body>
+</html>
